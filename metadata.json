@@ -1,5 +1,8 @@
 {
   "name": "LensDrop",
   "description": "A beautiful and secure platform to collect, share, and relive your wedding moments. Let every smile, every emotion, and every memory live forever with LensDrop.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
