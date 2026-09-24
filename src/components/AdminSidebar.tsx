@@ -50,14 +50,14 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="fixed top-0 left-0 h-screen w-72 bg-slate-900 border-r border-emerald-900/30 z-50 md:translate-x-0 flex flex-col"
       >
-        <div className="p-6 border-b border-emerald-900/30">
+        <div className="h-16 sm:h-20 px-6 border-b border-emerald-900/30 flex items-center justify-between">
           <Link to="/admin/dashboard" className="flex items-center gap-3" onClick={onClose}>
             <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
               <ShieldCheck className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
               <h1 className="font-bold text-xl text-white tracking-tight">LensDrop</h1>
-              <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Super Admin</span>
+              <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">Super Admin</span>
             </div>
           </Link>
         </div>

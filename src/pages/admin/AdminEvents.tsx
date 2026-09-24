@@ -74,22 +74,47 @@ export function AdminEvents() {
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Event ID</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Title</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Moderation</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Creator</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Photos</th>
               </tr>
             </thead>
             <tbody className="bg-slate-900/30 divide-y divide-slate-800">
-              {filteredEvents.map((e) => (
-                <tr key={e.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{e.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{e.title || 'Untitled'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{e.createdBy || 'Unknown'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{e.images ? e.images.length : 0}</td>
-                </tr>
-              ))}
+              {filteredEvents.map((e) => {
+                const photos = e.images || [];
+                const pendingCount = photos.filter((p: any) => p.status === 'pending').length;
+                const approvedCount = photos.filter((p: any) => p.status === 'approved' || !p.status).length;
+
+                return (
+                  <tr key={e.id} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{e.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{e.title || 'Untitled'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {e.moderationEnabled ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          Approval Queue
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                          Auto-Publish
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{e.createdBy || 'Unknown'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                      <span className="font-semibold text-white">{photos.length}</span>
+                      {pendingCount > 0 && (
+                        <span className="ml-2 text-xs text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                          {pendingCount} pending
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredEvents.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                     No events found matching your search.
                   </td>
                 </tr>

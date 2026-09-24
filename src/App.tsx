@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Github, Linkedin, Instagram, MessageCircle, Mail, Menu, Camera } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
-import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
@@ -11,6 +10,7 @@ import { EventGallery } from './pages/EventGallery';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
+import { BottomNav } from './components/BottomNav';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -22,6 +22,7 @@ import { LegalSettings } from './pages/settings/LegalSettings';
 import { SupportSettings } from './pages/settings/SupportSettings';
 
 import { AdminSidebar } from './components/AdminSidebar';
+import { WeddingShowcase } from './pages/WeddingShowcase';
 
 import { AdminEvents } from './pages/admin/AdminEvents';
 import { AdminUsers } from './pages/admin/AdminUsers';
@@ -46,27 +47,12 @@ function AppLayout() {
       {user && !isAdminRoute && <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
       {user && isAdminRoute && isAdmin && <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
       
-      <div className={`relative z-10 flex flex-col min-h-screen ${user ? 'md:ml-64' : ''} ${isAdminRoute ? 'md:ml-72' : ''}`}>
-        {!user && <Navbar />}
-        
-        {user && (
-          <header className={`md:hidden flex items-center justify-between p-4 ${isAdminRoute ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 dark:bg-slate-950/80 border-gray-200 dark:border-slate-800'} backdrop-blur-xl border-b sticky top-0 z-30`}>
-            <div className={`flex items-center gap-2 ${isAdminRoute ? 'text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
-              <Camera className="w-6 h-6" />
-              <span className={`font-semibold text-xl tracking-tight ${isAdminRoute ? 'text-white' : 'text-gray-900 dark:text-white'}`}>LensDrop</span>
-            </div>
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className={`p-2 rounded-lg transition-colors ${isAdminRoute ? 'text-slate-300 hover:bg-slate-800' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-          </header>
-        )}
+      <div className={`relative z-10 flex flex-col min-h-screen ${user && !isAdminRoute ? 'md:ml-64' : ''} ${user && isAdminRoute ? 'md:ml-72' : ''}`}>
+        <Navbar onToggleSidebar={() => setIsSidebarOpen(true)} />
 
-        <main className={`flex-grow ${isAdminRoute ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full`}>
+        <main className={`flex-grow ${isAdminRoute ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8 w-full`}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -77,6 +63,8 @@ function AppLayout() {
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/upload/:id" element={<EventAdmin />} />
             <Route path="/event/:id" element={<EventGallery />} />
+            <Route path="/wedding-qrs" element={<WeddingShowcase />} />
+            <Route path="/showcase" element={<WeddingShowcase />} />
             {/* Settings Routes */}
             <Route path="/settings/profile" element={<ProfileSettings />} />
             <Route path="/settings/security" element={<SecuritySettings />} />
@@ -84,11 +72,11 @@ function AppLayout() {
             <Route path="/settings/legal" element={<LegalSettings />} />
             <Route path="/settings/support" element={<SupportSettings />} />
             
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
           </Routes>
         </main>
         
-        <footer className="w-full py-8 text-center text-gray-500 dark:text-slate-400 border-t border-gray-200 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm mt-auto">
+        <footer className="w-full py-8 text-center text-gray-500 dark:text-slate-400 border-t border-gray-200 dark:border-slate-800/60 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm mt-auto mb-20 md:mb-0">
           <div className="flex justify-center gap-6 mb-4">
             <a href="https://github.com/pkskkumar900-debug" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" aria-label="GitHub">
               <Github className="w-5 h-5" />
@@ -108,6 +96,9 @@ function AppLayout() {
           </div>
           <p className="text-sm">Copyright &copy; {new Date().getFullYear()} LensDrop. Developed by Prince.</p>
         </footer>
+
+        {/* Mobile Bottom Navigation Bar (< md) */}
+        <BottomNav />
       </div>
     </div>
   );

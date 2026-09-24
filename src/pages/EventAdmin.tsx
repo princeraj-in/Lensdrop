@@ -6,7 +6,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { QRGenerator } from '../components/QRGenerator';
 import { UploadZone } from '../components/UploadZone';
 import { InvitationGenerator } from '../components/InvitationGenerator';
-import { ArrowLeft, Trash2, ExternalLink, Image as ImageIcon, MailOpen, CircleCheck, X } from 'lucide-react';
+import { ModerationQueue } from '../components/ModerationQueue';
+import { 
+  ArrowLeft, 
+  Trash2, 
+  ExternalLink, 
+  Image as ImageIcon, 
+  MailOpen, 
+  CircleCheck, 
+  X, 
+  ShieldCheck, 
+  Clock, 
+  AlertCircle 
+} from 'lucide-react';
 import { motion } from 'motion/react';
 import { notify } from '../lib/toast';
 import { Loader } from '../components/Loader';
@@ -19,7 +31,7 @@ export function EventAdmin() {
   
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'gallery' | 'invite'>('gallery');
+  const [activeTab, setActiveTab] = useState<'gallery' | 'moderation' | 'invite'>('gallery');
   const [photoToDelete, setPhotoToDelete] = useState<any>(null);
 
   useEffect(() => {
@@ -98,7 +110,7 @@ export function EventAdmin() {
           const parsedEvents = JSON.parse(savedEvents);
           const eventIndex = parsedEvents.findIndex((e: any) => e.id === id);
           if (eventIndex !== -1) {
-            parsedEvents[eventIndex].images = parsedEvents[eventIndex].images.filter((img: any) => img.public_id !== photoToDelete.public_id);
+            parsedEvents[eventIndex].images = parsedEvents[eventIndex].images.filter((img: any) => (img.public_id || img.url) !== (photoToDelete.public_id || photoToDelete.url));
             localStorage.setItem('lensdrop_events', JSON.stringify(parsedEvents));
             setEvent(parsedEvents[eventIndex]); // Update local state
             notify.success('Photo removed locally');
@@ -117,12 +129,79 @@ export function EventAdmin() {
     }
   };
 
+  const handleToggleModeration = async (enabled: boolean) => {
+    try {
+      await updateDoc(doc(db, 'events', id!), {
+        moderationEnabled: enabled
+      });
+    } catch (err) {
+      console.warn("Firebase update failed, updating localStorage", err);
+    }
+
+    setEvent((prev: any) => ({ ...prev, moderationEnabled: enabled }));
+
+    const savedEvents = localStorage.getItem('lensdrop_events');
+    if (savedEvents) {
+      try {
+        const parsed = JSON.parse(savedEvents);
+        const idx = parsed.findIndex((e: any) => e.id === id);
+        if (idx !== -1) {
+          parsed[idx].moderationEnabled = enabled;
+          localStorage.setItem('lensdrop_events', JSON.stringify(parsed));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleUpdatePhotoStatus = async (photoIds: string[], newStatus: 'approved' | 'rejected') => {
+    const currentImages = event.images || [];
+    const updatedImages = currentImages.map((img: any) => {
+      const imgId = img.public_id || img.id || img.url;
+      if (photoIds.includes(imgId)) {
+        return {
+          ...img,
+          status: newStatus,
+          moderatedAt: new Date().toISOString()
+        };
+      }
+      return img;
+    });
+
+    try {
+      await updateDoc(doc(db, 'events', id!), {
+        images: updatedImages
+      });
+    } catch (err) {
+      console.warn("Firebase update error:", err);
+    }
+
+    setEvent((prev: any) => ({ ...prev, images: updatedImages }));
+
+    const savedEvents = localStorage.getItem('lensdrop_events');
+    if (savedEvents) {
+      try {
+        const parsed = JSON.parse(savedEvents);
+        const idx = parsed.findIndex((e: any) => e.id === id);
+        if (idx !== -1) {
+          parsed[idx].images = updatedImages;
+          localStorage.setItem('lensdrop_events', JSON.stringify(parsed));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   if (loading || !event) {
     return <Loader />;
   }
 
   const galleryUrl = `${window.location.origin}/event/${id}`;
   const photos = event.images || [];
+  const pendingCount = photos.filter((p: any) => p.status === 'pending').length;
+  const approvedPhotos = photos.filter((p: any) => p.status === 'approved' || !p.status);
 
   return (
     <motion.div 
@@ -151,20 +230,35 @@ export function EventAdmin() {
             </a>
           </div>
 
-          <div className="flex items-center gap-4 mb-8 border-b border-gray-200 dark:border-slate-800">
+          <div className="flex items-center gap-4 mb-8 border-b border-gray-200 dark:border-slate-800 overflow-x-auto">
             <button
               onClick={() => setActiveTab('gallery')}
-              className={`pb-4 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+              className={`pb-4 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 shrink-0 ${
                 activeTab === 'gallery'
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
             >
-              <ImageIcon className="w-4 h-4" /> Gallery & Uploads
+              <ImageIcon className="w-4 h-4" /> Live Gallery ({approvedPhotos.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('moderation')}
+              className={`pb-4 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 shrink-0 ${
+                activeTab === 'moderation'
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" /> Moderation Queue
+              {pendingCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-slate-950 animate-pulse">
+                  {pendingCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('invite')}
-              className={`pb-4 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
+              className={`pb-4 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 shrink-0 ${
                 activeTab === 'invite'
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300'
@@ -176,6 +270,30 @@ export function EventAdmin() {
 
           {activeTab === 'gallery' ? (
             <>
+              {event.moderationEnabled && pendingCount > 0 && (
+                <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {pendingCount} photo{pendingCount > 1 ? 's' : ''} awaiting moderation
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Guest submissions are held privately until approved.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('moderation')}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-colors shrink-0"
+                  >
+                    Review Queue
+                  </button>
+                </div>
+              )}
+
               <UploadZone 
                 eventId={id!} 
                 onUploadComplete={(newImage) => {
@@ -187,19 +305,26 @@ export function EventAdmin() {
               />
 
               <div className="mt-12">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                  Uploaded Photos ({photos.length})
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Public Gallery Photos ({approvedPhotos.length})
+                  </h2>
+                  {event.moderationEnabled && (
+                    <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Moderation Active
+                    </span>
+                  )}
+                </div>
                 
-                {photos.length === 0 ? (
+                {approvedPhotos.length === 0 ? (
                   <div className="text-center py-12 bg-white dark:bg-slate-900/50 rounded-2xl border border-gray-200 dark:border-slate-800 border-dashed">
-                    <p className="text-gray-500 dark:text-slate-400">No photos uploaded yet.</p>
+                    <p className="text-gray-500 dark:text-slate-400">No approved photos in the public gallery yet.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {photos.map((photo: any, index: number) => (
+                    {approvedPhotos.map((photo: any, index: number) => (
                       <motion.div 
-                        key={photo.public_id || index} 
+                        key={photo.public_id || photo.id || index} 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
@@ -226,6 +351,17 @@ export function EventAdmin() {
                 )}
               </div>
             </>
+          ) : activeTab === 'moderation' ? (
+            <ModerationQueue
+              eventId={id!}
+              photos={photos}
+              moderationEnabled={!!event.moderationEnabled}
+              onToggleModeration={handleToggleModeration}
+              onUpdatePhotoStatus={handleUpdatePhotoStatus}
+              onDeletePhoto={async (photo) => {
+                setPhotoToDelete(photo);
+              }}
+            />
           ) : (
             <InvitationGenerator eventId={id!} eventTitle={event.title} initialData={event.invite} />
           )}

@@ -1,9 +1,9 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCnAt8cj1OMsD4390663ApYS6wlYs-oPWY",
   authDomain: "lensdrop-325dd.firebaseapp.com",
   projectId: "lensdrop-325dd",
@@ -13,7 +13,8 @@ const firebaseConfig = {
   measurementId: "G-XHMDZ8NB30"
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase app safely (avoid duplicate app initialization)
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);

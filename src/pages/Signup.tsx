@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { Camera, Mail, Lock, Eye, EyeOff, Loader2, User } from 'lucide-react';
 import { motion } from 'motion/react';
+import { FirebaseDomainNotice } from '../components/FirebaseDomainNotice';
+import { notify } from '../lib/toast';
 
 export function Signup() {
   const { user, loading: authLoading, signupWithEmail, loginWithGoogle } = useAuth();
@@ -16,6 +18,7 @@ export function Signup() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState(false);
 
   if (authLoading) return null;
   if (user) {
@@ -50,11 +53,11 @@ export function Signup() {
     setLoading(true);
 
     try {
-      await signupWithEmail(email, password);
-      // We could also save the fullName to the user profile here, but let's stick to the core auth for now
+      await signupWithEmail(email, password, fullName);
       let sessionConfig = { role: 'user' };
 
-      if (email === 'pkskkumar900@gmail.com') {
+      const lowerEmail = email.toLowerCase().trim();
+      if (lowerEmail === 'pkskkumar900@gmail.com' || lowerEmail === 'kusprince.raj@gmail.com') {
         sessionConfig.role = 'admin';
         localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
         navigate('/admin/dashboard');
@@ -79,17 +82,24 @@ export function Signup() {
     }
   };
 
+  const handleQuickAdminDemo = () => {
+    const sessionConfig = { role: 'admin', email: 'kusprince.raj@gmail.com' };
+    localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
+    notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
+    navigate('/admin/dashboard');
+  };
+
   const handleGoogleLogin = async () => {
     setError('');
+    setIsUnauthorizedDomain(false);
     setLoading(true);
     try {
       const result = await loginWithGoogle();
-      const userEmail = result?.user?.email;
+      const userEmail = result?.user?.email?.toLowerCase();
 
       let sessionConfig = { role: 'user' };
 
-      // In production, this authentication will be handled securely via backend API/JWT
-      if (userEmail === 'pkskkumar900@gmail.com') {
+      if (userEmail === 'pkskkumar900@gmail.com' || userEmail === 'kusprince.raj@gmail.com') {
         sessionConfig.role = 'admin';
         localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
         navigate('/admin/dashboard');
@@ -100,7 +110,10 @@ export function Signup() {
     } catch (err: any) {
       console.error("Google Auth Error:", err);
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('auth/unauthorized-domain')) {
+        setIsUnauthorizedDomain(true);
+        errorMessage = 'Firebase Google Sign-In: Unauthorized domain. Please see resolution steps below, or use Email & Password registration.';
+      } else if (err.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed before completing.';
       } else if (err.message) {
         errorMessage = err.message;
@@ -131,7 +144,13 @@ export function Signup() {
           Sign up to start sharing your memories.
         </p>
 
-        {error && (
+        {isUnauthorizedDomain && (
+          <FirebaseDomainNotice 
+            onUseDemoAdmin={handleQuickAdminDemo}
+          />
+        )}
+
+        {error && !isUnauthorizedDomain && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm text-center">
             {error}
           </div>

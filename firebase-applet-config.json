@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0176713315",
-  "appId": "1:434190167228:web:de8fffddd7250e7b26b4b9",
-  "apiKey": "AIzaSyAlVth1ucvqvPFBaC7nQUJz70CuRCwwBsI",
-  "authDomain": "gen-lang-client-0176713315.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-109a00a4-d8ca-4f14-b4d1-605425212399",
-  "storageBucket": "gen-lang-client-0176713315.firebasestorage.app",
-  "messagingSenderId": "434190167228",
-  "measurementId": ""
+  "projectId": "lensdrop-325dd",
+  "appId": "1:1002219967167:web:528d912d9af8abb310ec0a",
+  "apiKey": "AIzaSyCnAt8cj1OMsD4390663ApYS6wlYs-oPWY",
+  "authDomain": "lensdrop-325dd.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "lensdrop-325dd.firebasestorage.app",
+  "messagingSenderId": "1002219967167",
+  "measurementId": "G-XHMDZ8NB30"
 }

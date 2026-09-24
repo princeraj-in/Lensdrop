@@ -3,12 +3,13 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp 
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Image as ImageIcon, Calendar, ChevronRight, Sparkles, Download, Trash2 } from 'lucide-react';
+import { Plus, Image as ImageIcon, Calendar, ChevronRight, Sparkles, Download, Trash2, QrCode, ArrowRight, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { notify } from '../lib/toast';
 import { Loader } from '../components/Loader';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
+import { WEDDING_ALBUMS } from '../data/weddingAlbums';
 
 interface Event {
   id: string;
@@ -28,6 +29,16 @@ export function Dashboard() {
 
   useEffect(() => {
     setIsMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setTimeout(() => {
+        const input = document.getElementById('newEventInput');
+        if (input) {
+          input.focus();
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
   }, []);
 
   const handleDownloadQR = (e: React.MouseEvent, eventId: string, eventTitle: string) => {
@@ -148,35 +159,53 @@ export function Dashboard() {
           public_id: "demo_1",
           name: "wedding_kiss.jpg",
           size: 102400,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date(Date.now() - 3600000).toISOString(),
+          status: 'approved',
+          uploaderType: 'host',
+          uploaderName: 'Host'
         },
         {
           url: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80",
           public_id: "demo_2",
           name: "wedding_details.jpg",
           size: 102400,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date(Date.now() - 3000000).toISOString(),
+          status: 'approved',
+          uploaderType: 'host',
+          uploaderName: 'Host'
         },
         {
           url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80",
           public_id: "demo_3",
           name: "wedding_walk.jpg",
           size: 102400,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date(Date.now() - 2400000).toISOString(),
+          status: 'approved',
+          uploaderType: 'guest',
+          uploaderName: 'Maya & David',
+          guestNote: 'Congratulations to the gorgeous couple! 💕'
         },
         {
           url: "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?auto=format&fit=crop&w=800&q=80",
           public_id: "demo_4",
           name: "wedding_rings.jpg",
           size: 102400,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date(Date.now() - 600000).toISOString(),
+          status: 'pending',
+          uploaderType: 'guest',
+          uploaderName: 'Uncle Vikram (Table 3)',
+          guestNote: 'Captured this candid moment right before the toast!'
         },
         {
           url: "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=800&q=80",
           public_id: "demo_5",
           name: "wedding_pose.jpg",
           size: 102400,
-          uploadedAt: new Date().toISOString()
+          uploadedAt: new Date(Date.now() - 300000).toISOString(),
+          status: 'pending',
+          uploaderType: 'guest',
+          uploaderName: 'Sam & Elena',
+          guestNote: 'Best dance moves of the night! 💃🕺'
         }
       ];
 
@@ -186,6 +215,7 @@ export function Dashboard() {
         createdAt: new Date().toISOString(),
         createdBy: user.uid,
         qrCodeUrl: `${window.location.origin}/event/${Date.now()}`,
+        moderationEnabled: true,
         images: demoImages
       };
 
@@ -219,7 +249,84 @@ export function Dashboard() {
       animate={{ opacity: 1 }}
       className="max-w-5xl mx-auto relative z-10"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 mt-12">
+      {/* Real Wedding QR Portfolios Showcase */}
+      <div className="mb-12 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-indigo-900/20 via-purple-900/10 to-slate-900/40 border border-indigo-500/20 backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Real Wedding Portfolios • 25 Raw Photos Per QR Code</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Client Showcase QR Albums
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+              Ready-to-scan real wedding albums with zero duplicate imagery. Perfect for client presentations and live demonstrations.
+            </p>
+          </div>
+
+          <Link
+            to="/wedding-qrs"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>Open All 4 QR Passes</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {WEDDING_ALBUMS.map((alb) => (
+            <div
+              key={alb.id}
+              className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-gray-200/80 dark:border-white/[0.08] flex flex-col justify-between hover:border-indigo-500/40 transition-all shadow-sm group"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="p-2 bg-white rounded-xl shadow-inner border border-gray-100 dark:border-white/10 shrink-0">
+                    <QRCodeSVG
+                      value={`${window.location.origin}/event/${alb.id}`}
+                      size={68}
+                      level="M"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                    {alb.badge}
+                  </span>
+                </div>
+
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-indigo-500 transition-colors line-clamp-1">
+                  {alb.couple}
+                </h3>
+                <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate mt-0.5">
+                  {alb.venue}
+                </p>
+                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1">
+                  ● 25 High-Res Photos
+                </p>
+              </div>
+
+              <div className="pt-3 mt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                <Link
+                  to={`/event/${alb.id}`}
+                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  <span>View Gallery</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+                <Link
+                  to="/wedding-qrs"
+                  className="text-[11px] text-gray-400 hover:text-gray-200"
+                >
+                  Print QR →
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 mt-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Events</h1>
           <p className="text-gray-600 dark:text-slate-400 mt-1">Manage your photo galleries and QR codes.</p>

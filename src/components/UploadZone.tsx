@@ -72,7 +72,10 @@ export function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
             public_id: uploadResult.public_id,
             name: file.name,
             size: compressedFile.size,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
+            status: 'approved',
+            uploaderType: 'host',
+            uploaderName: 'Host'
           };
           
           try {

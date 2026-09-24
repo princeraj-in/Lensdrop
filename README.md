@@ -30,10 +30,11 @@ Behind the scenes, hosts and platform administrators enjoy an intuitive command 
 - **Drag-and-Drop Dropzone**: Native support for desktop and mobile uploads powered by `react-dropzone`.
 
 ### 💍 Host & Event Curation
+- **Host Moderation Queue (Approval Mode)**: Toggleable privacy shield allowing hosts to review guest uploads privately before publishing them to the public live stream or gallery. Includes batch approvals, batch rejections, multi-select checkboxes, fullscreen inspection, and undo states.
 - **Interactive Event Galleries**: Live, responsive photo walls that automatically update with guest submissions in real time.
 - **One-Click Batch Archiving**: Hosts can download entire wedding collections in a single ZIP bundle powered by `JSZip` and `file-saver`.
 - **Digital Invitation Studio**: Built-in invitation generator and customizable digital passes with direct RSVP and event details.
-- **Privacy & Permissions**: Granular controls allowing hosts to lock galleries, approve uploads, or distribute view-only links.
+- **Privacy & Permissions**: Granular controls allowing hosts to lock galleries, require upload approval, or distribute view-only links.
 
 ### 🛡️ Enterprise Super Admin Suite
 - **Mission Control Overview**: Centralized platform metrics displaying aggregate user count, total events hosted, storage utilization, and real-time server health.

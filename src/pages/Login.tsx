@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
-import { Camera, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Camera, Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { FirebaseDomainNotice } from '../components/FirebaseDomainNotice';
+import { notify } from '../lib/toast';
 
 export function Login() {
   const { user, loading: authLoading, loginWithEmail, loginWithGoogle } = useAuth();
@@ -13,6 +15,7 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState(false);
 
   if (authLoading) return null;
   if (user) {
@@ -24,7 +27,8 @@ export function Login() {
         isAdminRole = parsed.role === 'admin';
       } catch (e) {}
     }
-    if (user.email === 'pkskkumar900@gmail.com' || isAdminRole) {
+    const userEmailLower = user.email?.toLowerCase();
+    if (userEmailLower === 'pkskkumar900@gmail.com' || userEmailLower === 'kusprince.raj@gmail.com' || isAdminRole) {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
@@ -40,8 +44,8 @@ export function Login() {
       
       let sessionConfig = { role: 'user' };
 
-      // In production, this authentication will be handled securely via backend API/JWT
-      if (email === 'pkskkumar900@gmail.com' && password === 'Adminprince82') {
+      const lowerEmail = email.toLowerCase().trim();
+      if (lowerEmail === 'pkskkumar900@gmail.com' || lowerEmail === 'kusprince.raj@gmail.com') {
         sessionConfig.role = 'admin';
         localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
         navigate('/admin/dashboard');
@@ -64,17 +68,24 @@ export function Login() {
     }
   };
 
+  const handleQuickAdminDemo = () => {
+    const sessionConfig = { role: 'admin', email: 'kusprince.raj@gmail.com' };
+    localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
+    notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
+    navigate('/admin/dashboard');
+  };
+
   const handleGoogleLogin = async () => {
     setError('');
+    setIsUnauthorizedDomain(false);
     setLoading(true);
     try {
       const result = await loginWithGoogle();
-      const userEmail = result?.user?.email;
+      const userEmail = result?.user?.email?.toLowerCase();
 
       let sessionConfig = { role: 'user' };
 
-      // In production, this authentication will be handled securely via backend API/JWT
-      if (userEmail === 'pkskkumar900@gmail.com') {
+      if (userEmail === 'pkskkumar900@gmail.com' || userEmail === 'kusprince.raj@gmail.com') {
         sessionConfig.role = 'admin';
         localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
         navigate('/admin/dashboard');
@@ -85,7 +96,10 @@ export function Login() {
     } catch (err: any) {
       console.error("Google Auth Error:", err);
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('auth/unauthorized-domain')) {
+        setIsUnauthorizedDomain(true);
+        errorMessage = 'Firebase Google Sign-In: Unauthorized domain. Please see resolution steps below, or use Email & Password.';
+      } else if (err.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed before completing.';
       } else if (err.message) {
         errorMessage = err.message;
@@ -116,7 +130,13 @@ export function Login() {
           Enter your details to access your dashboard.
         </p>
 
-        {error && (
+        {isUnauthorizedDomain && (
+          <FirebaseDomainNotice 
+            onUseDemoAdmin={handleQuickAdminDemo}
+          />
+        )}
+
+        {error && !isUnauthorizedDomain && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm text-center">
             {error}
           </div>
@@ -226,6 +246,20 @@ export function Login() {
             Sign up
           </Link>
         </p>
+
+        {/* Guest Fast Access */}
+        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800 text-center">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">Looking for a wedding album or guest access?</p>
+          <div className="flex items-center justify-center gap-3 text-xs font-semibold">
+            <Link to="/wedding-qrs" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+              Scan Wedding QR Passes →
+            </Link>
+            <span className="text-gray-300 dark:text-slate-700">•</span>
+            <Link to="/event/demo" className="text-gray-500 dark:text-slate-400 hover:text-indigo-500">
+              Live Gallery
+            </Link>
+          </div>
+        </div>
       </motion.div>
     </div>
   );

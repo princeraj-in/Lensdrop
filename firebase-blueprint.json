@@ -9,9 +9,21 @@
           "type": "string",
           "description": "UID of the photographer who created the event"
         },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who created the event"
+        },
         "title": {
           "type": "string",
           "description": "Title of the event"
+        },
+        "moderationEnabled": {
+          "type": "boolean",
+          "description": "Whether host moderation is required before guest photos are published"
+        },
+        "images": {
+          "type": "array",
+          "description": "Array of uploaded photo objects with moderation status"
         },
         "date": {
           "type": "string",
