@@ -18,14 +18,24 @@ const ADMIN_EMAILS = [
   'pkskkumar900@gmail.com'
 ];
 
+export interface LensDropUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role?: string;
+  isLocalSession?: boolean;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: User | LensDropUser | null;
   loading: boolean;
   isAdmin: boolean;
   loginWithGoogle: () => Promise<any>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   signupWithEmail: (email: string, pass: string, fullName?: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  loginWithDemo: (email?: string, role?: string, displayName?: string) => Promise<LensDropUser>;
   logout: () => Promise<void>;
   login: () => Promise<void>; // Keep for backward compatibility
 }
@@ -33,19 +43,61 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | LensDropUser | null>(() => {
+    try {
+      const savedSession = localStorage.getItem('lensdrop_session_token');
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed?.email) {
+          const emailLower = parsed.email.toLowerCase();
+          const adminStatus = parsed.role === 'admin' || ADMIN_EMAILS.includes(emailLower);
+          return {
+            uid: parsed.uid || `user_${emailLower.replace(/[^a-zA-Z0-9]/g, '_')}`,
+            email: parsed.email,
+            displayName: parsed.displayName || (emailLower === 'kusprince.raj@gmail.com' ? 'Prince Raj' : parsed.email.split('@')[0]),
+            photoURL: parsed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(parsed.displayName || parsed.email)}&background=6366f1&color=fff&bold=true`,
+            role: adminStatus ? 'admin' : 'user',
+            isLocalSession: true
+          };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    try {
+      const savedSession = localStorage.getItem('lensdrop_session_token');
+      if (savedSession) {
+        const parsed = JSON.parse(savedSession);
+        if (parsed?.email) {
+          return parsed.role === 'admin' || ADMIN_EMAILS.includes(parsed.email.toLowerCase());
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return false;
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      
       if (currentUser) {
+        setUser(currentUser);
         const userEmail = currentUser.email?.toLowerCase() || '';
         const adminStatus = ADMIN_EMAILS.includes(userEmail);
         setIsAdmin(adminStatus);
         
+        localStorage.setItem('lensdrop_session_token', JSON.stringify({
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          role: adminStatus ? 'admin' : 'user'
+        }));
+
         // Save user to Firestore (safe fail)
         try {
           const userRef = doc(db, 'users', currentUser.uid);
@@ -67,6 +119,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn("Notice: Firestore user sync skipped or offline:", error);
         }
       } else {
+        // Firebase has no active session. Check if we have an active local/demo session.
+        try {
+          const savedSession = localStorage.getItem('lensdrop_session_token');
+          if (savedSession) {
+            const parsed = JSON.parse(savedSession);
+            if (parsed?.email) {
+              const emailLower = parsed.email.toLowerCase();
+              const adminStatus = parsed.role === 'admin' || ADMIN_EMAILS.includes(emailLower);
+              setUser({
+                uid: parsed.uid || `user_${emailLower.replace(/[^a-zA-Z0-9]/g, '_')}`,
+                email: parsed.email,
+                displayName: parsed.displayName || (emailLower === 'kusprince.raj@gmail.com' ? 'Prince Raj' : parsed.email.split('@')[0]),
+                photoURL: parsed.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(parsed.displayName || parsed.email)}&background=6366f1&color=fff&bold=true`,
+                role: adminStatus ? 'admin' : 'user',
+                isLocalSession: true
+              });
+              setIsAdmin(adminStatus);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // ignore
+        }
+        setUser(null);
         setIsAdmin(false);
       }
       
@@ -82,10 +159,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       setUser(result.user);
       return result;
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
+    } catch (error: any) {
+      if (error?.code === 'auth/unauthorized-domain' || error?.message?.includes('unauthorized-domain')) {
+        console.warn('Firebase Google Auth Notice: The current domain is not yet authorized in Firebase Console settings. Please add it to Firebase Console > Authentication > Settings > Authorized domains, or use Email/Password or Demo Admin login.');
+      } else {
+        console.error('Error signing in with Google:', error);
+      }
       throw error;
     }
+  };
+
+  const loginWithDemo = async (
+    email = 'kusprince.raj@gmail.com', 
+    role = 'admin', 
+    displayName = 'Prince Raj'
+  ): Promise<LensDropUser> => {
+    const emailLower = email.toLowerCase().trim();
+    const adminStatus = role === 'admin' || ADMIN_EMAILS.includes(emailLower);
+    const demoUser: LensDropUser = {
+      uid: `user_${emailLower.replace(/[^a-zA-Z0-9]/g, '_')}`,
+      email: emailLower,
+      displayName: displayName || (emailLower === 'kusprince.raj@gmail.com' ? 'Prince Raj' : emailLower.split('@')[0]),
+      photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || emailLower)}&background=6366f1&color=fff&bold=true`,
+      role: adminStatus ? 'admin' : 'user',
+      isLocalSession: true
+    };
+    
+    localStorage.setItem('lensdrop_session_token', JSON.stringify(demoUser));
+    setUser(demoUser);
+    setIsAdmin(adminStatus);
+    
+    // Attempt background sync to Firestore if possible
+    try {
+      const userRef = doc(db, 'users', demoUser.uid);
+      await setDoc(userRef, {
+        uid: demoUser.uid,
+        email: demoUser.email,
+        displayName: demoUser.displayName,
+        photoURL: demoUser.photoURL,
+        role: demoUser.role,
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+    } catch {
+      // Safe fallback
+    }
+
+    return demoUser;
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -129,6 +248,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       localStorage.removeItem('lensdrop_session_token');
+      setUser(null);
+      setIsAdmin(false);
       await signOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -144,6 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loginWithEmail, 
       signupWithEmail,
       resetPassword,
+      loginWithDemo,
       logout,
       login: loginWithGoogle 
     }}>

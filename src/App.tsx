@@ -53,9 +53,11 @@ function AppLayout() {
         <main className={`flex-grow ${isAdminRoute ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8 w-full`}>
           <Routes>
             <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+            <Route path="/home" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Navigate to="/settings/profile" replace />} />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
@@ -67,7 +69,7 @@ function AppLayout() {
             <Route path="/showcase" element={<WeddingShowcase />} />
             {/* Settings Routes */}
             <Route path="/settings/profile" element={<ProfileSettings />} />
-            <Route path="/settings/security" element={<SecuritySettings />} />
+            <Route path="/settings/security" element={<Navigate to="/settings/profile?tab=security" replace />} />
             <Route path="/settings/appearance" element={<AppearanceSettings />} />
             <Route path="/settings/legal" element={<LegalSettings />} />
             <Route path="/settings/support" element={<SupportSettings />} />

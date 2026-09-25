@@ -7,7 +7,7 @@ import { FirebaseDomainNotice } from '../components/FirebaseDomainNotice';
 import { notify } from '../lib/toast';
 
 export function Login() {
-  const { user, loading: authLoading, loginWithEmail, loginWithGoogle } = useAuth();
+  const { user, loading: authLoading, loginWithEmail, loginWithGoogle, loginWithDemo } = useAuth();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
@@ -68,11 +68,30 @@ export function Login() {
     }
   };
 
-  const handleQuickAdminDemo = () => {
-    const sessionConfig = { role: 'admin', email: 'kusprince.raj@gmail.com' };
-    localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
-    notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
-    navigate('/admin/dashboard');
+  const handleQuickAdminDemo = async () => {
+    setLoading(true);
+    try {
+      await loginWithDemo('kusprince.raj@gmail.com', 'admin', 'Prince Raj');
+      notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
+      navigate('/admin/dashboard');
+    } catch {
+      notify.error('Admin sign in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickPhotographerDemo = async () => {
+    setLoading(true);
+    try {
+      await loginWithDemo('demo.photographer@lensdrop.pro', 'user', 'Demo Studio');
+      notify.success('Signed in as Photographer Studio');
+      navigate('/dashboard');
+    } catch {
+      notify.error('Photographer sign in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -94,15 +113,18 @@ export function Login() {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      console.error("Google Auth Error:", err);
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('auth/unauthorized-domain')) {
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('auth/unauthorized-domain')) {
+        console.warn("Google Auth Notice (Domain not authorized in Firebase Console):", err.message);
         setIsUnauthorizedDomain(true);
-        errorMessage = 'Firebase Google Sign-In: Unauthorized domain. Please see resolution steps below, or use Email & Password.';
-      } else if (err.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Firebase Google Sign-In: Unauthorized domain. Please see resolution steps below, or use Instant 1-Click Access.';
+      } else if (err?.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed before completing.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else {
+        console.error("Google Auth Error:", err);
+        if (err?.message) {
+          errorMessage = err.message;
+        }
       }
       setError(errorMessage);
     } finally {
@@ -126,13 +148,41 @@ export function Login() {
         <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">
           Welcome back
         </h2>
-        <p className="text-center text-gray-500 dark:text-slate-400 mb-8">
+        <p className="text-center text-gray-500 dark:text-slate-400 mb-6">
           Enter your details to access your dashboard.
         </p>
+
+        {/* Instant 1-Click Fast Access Card */}
+        <div className="mb-6 p-3.5 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 text-left">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  Instant 1-Click Access
+                </p>
+                <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                  Prince Raj <span className="text-[11px] font-normal text-gray-500 dark:text-slate-400">(Admin)</span>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleQuickAdminDemo}
+              disabled={loading}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
 
         {isUnauthorizedDomain && (
           <FirebaseDomainNotice 
             onUseDemoAdmin={handleQuickAdminDemo}
+            onUseDemoPhotographer={handleQuickPhotographerDemo}
           />
         )}
 

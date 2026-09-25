@@ -32,8 +32,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Wedding QR Passes', path: '/wedding-qrs', icon: Sparkles },
-    { name: 'Profile Settings', path: '/settings/profile', icon: Settings },
-    { name: 'Security & Auth', path: '/settings/security', icon: Shield },
+    { name: 'Profile & Account', path: '/settings/profile', icon: Settings },
     { name: 'Appearance', path: '/settings/appearance', icon: Palette },
     { name: 'Legal & Privacy', path: '/settings/legal', icon: FileText },
     { name: 'Help & Support', path: '/settings/support', icon: HelpCircle },

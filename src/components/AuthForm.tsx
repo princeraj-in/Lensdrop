@@ -56,18 +56,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       await loginWithGoogle();
       navigate('/dashboard');
     } catch (err: any) {
-      console.error("Google Auth Error:", err);
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('auth/unauthorized-domain')) {
+        console.warn("Google Auth Notice (Domain not authorized in Firebase Console):", err.message);
+        errorMessage = 'This domain is not yet authorized in Firebase Console. Please add it to Authorized Domains, or sign in with Email & Password.';
+      } else if (err?.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed before completing.';
-      } else if (err.code === 'auth/popup-blocked') {
+      } else if (err?.code === 'auth/popup-blocked') {
         errorMessage = 'Sign-in popup was blocked by your browser. Please allow popups for this site.';
-      } else if (err.code === 'auth/operation-not-allowed') {
+      } else if (err?.code === 'auth/operation-not-allowed') {
         errorMessage = 'Google sign-in is not enabled. Please enable it in your Firebase Console > Authentication > Sign-in method.';
-      } else if (err.code === 'auth/unauthorized-domain') {
-        errorMessage = 'This domain is not authorized for OAuth operations. Please add it in the Firebase Console.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else {
+        console.error("Google Auth Error:", err);
+        if (err?.message) errorMessage = err.message;
       }
       setError(errorMessage);
     }

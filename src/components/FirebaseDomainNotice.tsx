@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { ExternalLink, Copy, Check, ShieldAlert, Sparkles, ArrowRight } from 'lucide-react';
+import { ExternalLink, Copy, Check, ShieldAlert, Sparkles, ArrowRight, UserCheck, KeyRound } from 'lucide-react';
 import { notify } from '../lib/toast';
 
 interface FirebaseDomainNoticeProps {
   onUseEmailFallback?: () => void;
   onUseDemoAdmin?: () => void;
+  onUseDemoPhotographer?: () => void;
 }
 
-export function FirebaseDomainNotice({ onUseEmailFallback, onUseDemoAdmin }: FirebaseDomainNoticeProps) {
+export function FirebaseDomainNotice({ onUseEmailFallback, onUseDemoAdmin, onUseDemoPhotographer }: FirebaseDomainNoticeProps) {
   const [copied, setCopied] = useState(false);
   const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const firebaseSettingsUrl = 'https://console.firebase.google.com/project/lensdrop-325dd/authentication/settings';
@@ -30,8 +31,31 @@ export function FirebaseDomainNotice({ onUseEmailFallback, onUseDemoAdmin }: Fir
             Google Sign-In: Unauthorized Domain
           </h4>
           <p className="text-xs text-amber-800/90 dark:text-amber-300/80 mt-1 leading-relaxed">
-            Firebase Google OAuth requires adding this preview domain to your Firebase Authorized Domains list before Google popup can complete.
+            Firebase Google OAuth restricts popup sign-ins until this preview URL is whitelisted in your Firebase Console.
           </p>
+
+          {/* Instant 1-Click Fast-Pass */}
+          {onUseDemoAdmin && (
+            <div className="mt-3 p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-indigo-500/20 to-purple-500/20 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <p className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  Instant Bypass Available
+                </p>
+                <p className="text-[11px] text-gray-600 dark:text-slate-300">
+                  Enter immediately as <strong>kusprince.raj@gmail.com</strong> (Admin)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onUseDemoAdmin}
+                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition-colors shrink-0"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>Enter as Admin</span>
+              </button>
+            </div>
+          )}
 
           {/* Current Domain Box with 1-click Copy */}
           <div className="mt-3 p-2.5 rounded-xl bg-white dark:bg-slate-900/90 border border-amber-500/30 flex items-center justify-between gap-2">
@@ -50,12 +74,12 @@ export function FirebaseDomainNotice({ onUseEmailFallback, onUseDemoAdmin }: Fir
 
           {/* Steps */}
           <div className="mt-3 text-[11px] text-amber-800/80 dark:text-amber-300/70 space-y-1">
-            <p>1. Copy the domain above.</p>
+            <p>1. Click <strong>Copy Domain</strong> above.</p>
             <p>2. Open Firebase Console &gt; Authentication &gt; Settings &gt; Authorized domains.</p>
             <p>3. Click <strong>Add domain</strong>, paste it, and save.</p>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-amber-500/20">
+          <div className="mt-3 flex flex-wrap items-center gap-3 pt-2 border-t border-amber-500/20">
             <a
               href={firebaseSettingsUrl}
               target="_blank"
@@ -66,16 +90,29 @@ export function FirebaseDomainNotice({ onUseEmailFallback, onUseDemoAdmin }: Fir
               <ExternalLink className="w-3 h-3" />
             </a>
 
-            {onUseDemoAdmin && (
+            {onUseDemoPhotographer && (
               <>
                 <span className="text-amber-500/40">•</span>
                 <button
                   type="button"
-                  onClick={onUseDemoAdmin}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  onClick={onUseDemoPhotographer}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-slate-300 hover:underline"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Enter as Admin (kusprince.raj@gmail.com)</span>
+                  <span>Sign in as Photographer</span>
+                </button>
+              </>
+            )}
+
+            {onUseEmailFallback && (
+              <>
+                <span className="text-amber-500/40">•</span>
+                <button
+                  type="button"
+                  onClick={onUseEmailFallback}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  <span>Use Email & Password</span>
                 </button>
               </>
             )}

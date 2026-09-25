@@ -7,7 +7,7 @@ import { FirebaseDomainNotice } from '../components/FirebaseDomainNotice';
 import { notify } from '../lib/toast';
 
 export function Signup() {
-  const { user, loading: authLoading, signupWithEmail, loginWithGoogle } = useAuth();
+  const { user, loading: authLoading, signupWithEmail, loginWithGoogle, loginWithDemo } = useAuth();
   const navigate = useNavigate();
   
   const [fullName, setFullName] = useState('');
@@ -82,11 +82,17 @@ export function Signup() {
     }
   };
 
-  const handleQuickAdminDemo = () => {
-    const sessionConfig = { role: 'admin', email: 'kusprince.raj@gmail.com' };
-    localStorage.setItem('lensdrop_session_token', JSON.stringify(sessionConfig));
-    notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
-    navigate('/admin/dashboard');
+  const handleQuickAdminDemo = async () => {
+    setLoading(true);
+    try {
+      await loginWithDemo('kusprince.raj@gmail.com', 'admin', 'Prince Raj');
+      notify.success('Signed in as Admin (kusprince.raj@gmail.com)');
+      navigate('/admin/dashboard');
+    } catch {
+      notify.error('Admin sign in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -108,15 +114,18 @@ export function Signup() {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      console.error("Google Auth Error:", err);
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('auth/unauthorized-domain')) {
+      if (err?.code === 'auth/unauthorized-domain' || err?.message?.includes('auth/unauthorized-domain')) {
+        console.warn("Google Auth Notice (Domain not authorized in Firebase Console):", err.message);
         setIsUnauthorizedDomain(true);
         errorMessage = 'Firebase Google Sign-In: Unauthorized domain. Please see resolution steps below, or use Email & Password registration.';
-      } else if (err.code === 'auth/popup-closed-by-user') {
+      } else if (err?.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in popup was closed before completing.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else {
+        console.error("Google Auth Error:", err);
+        if (err?.message) {
+          errorMessage = err.message;
+        }
       }
       setError(errorMessage);
     } finally {
@@ -147,6 +156,7 @@ export function Signup() {
         {isUnauthorizedDomain && (
           <FirebaseDomainNotice 
             onUseDemoAdmin={handleQuickAdminDemo}
+            onUseEmailFallback={() => setIsUnauthorizedDomain(false)}
           />
         )}
 

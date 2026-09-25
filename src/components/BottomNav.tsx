@@ -159,7 +159,7 @@ export function BottomNav() {
           {/* AUTHENTICATED HOST VIEW */}
           {user && !isAdminRoute && !isEventGallery && (
             <>
-              {/* Dashboard */}
+              {/* Home */}
               <Link
                 to="/dashboard"
                 className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
@@ -168,8 +168,8 @@ export function BottomNav() {
                     : 'text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
                 }`}
               >
-                <LayoutDashboard className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px]">Dashboard</span>
+                <Home className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Home</span>
               </Link>
 
               {/* Wedding QR Passes */}
@@ -198,40 +198,40 @@ export function BottomNav() {
                 </motion.button>
               </div>
 
-              {/* Admin Jump (if admin) or Security */}
+              {/* Admin Jump (if admin) or Support */}
               {isAdmin ? (
                 <Link
                   to="/admin/dashboard"
-                  className="flex flex-col items-center justify-center flex-1 py-1 text-emerald-500"
+                  className="flex flex-col items-center justify-center flex-1 py-1 text-emerald-500 font-medium"
                 >
                   <ShieldCheck className="w-5 h-5 mb-0.5" />
                   <span className="text-[10px]">Admin</span>
                 </Link>
               ) : (
                 <Link
-                  to="/settings/security"
+                  to="/settings/support"
                   className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-                    location.pathname === '/settings/security'
+                    location.pathname === '/settings/support'
                       ? 'text-indigo-600 dark:text-indigo-400 font-bold'
                       : 'text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
                   }`}
                 >
-                  <Sparkles className="w-5 h-5 mb-0.5" />
-                  <span className="text-[10px]">Security</span>
+                  <Sparkles className="w-5 h-5 mb-0.5 text-indigo-400" />
+                  <span className="text-[10px]">Support</span>
                 </Link>
               )}
 
-              {/* Settings */}
+              {/* Profile */}
               <Link
                 to="/settings/profile"
                 className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-                  isSettings
+                  isSettings || location.pathname === '/settings/profile'
                     ? 'text-indigo-600 dark:text-indigo-400 font-bold'
                     : 'text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
                 }`}
               >
-                <Settings className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px]">Settings</span>
+                <Users className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Profile</span>
               </Link>
             </>
           )}
